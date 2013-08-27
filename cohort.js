@@ -67,9 +67,27 @@ function Cohort(config) {
       .attr('text-anchor', 'middle');
 
 
+  svg.append('g')
+    .attr('class', 'legend-g')
+    .attr('transform', 'translate(0, -14)');
+
+  var coverX = 0;
+  var coverWidth = 2;
+
+  svg.append('g')
+      .attr('transform', 'translate(' + (width + 1.5*bandLength) + ', 0)')
+      .append('text')
+      .attr('class', 'years-healthy-label')
+
+  svg.append('g')
+      .attr('transform', 'translate(' + (width + 3*bandLength) + ', 0)')
+      .append('text')
+      .attr('class', 'years-to-live-label')
   function my() {
 
-    var bars = svg.selectAll('.bar').data(apc);
+    var bars = svg.selectAll('.bar').data(apc, function(d) {
+      return d.generation;
+    });
 
     bars.enter().append('rect');
     bars
@@ -80,7 +98,12 @@ function Cohort(config) {
       .attr('y', function(d) { return y(d.name) + bandLength / 2 - barHeight /2 ; })
       .attr('display', function(d) { if (!d[obesityPercent]) return 'none'; })
       .attr('width', function(d) {
-        return x(parseDate('' + (d.generation + d.expectancy))) - x(parseDate('' + d.generation));
+        var w = x(parseDate('' + (d.generation + d.expectancy))) - x(parseDate('' + d.generation));
+
+        var p = x(parseDate('' + d.generation));
+        if (p > coverX) return 0;
+        else if (w + p > coverX) return coverX - p;
+        else return w;
       })
       .attr('height', barHeight)
       .style('fill', function(d, i) {
@@ -89,7 +112,11 @@ function Cohort(config) {
       .on('mouseenter', onHighlightHealthy)
       .on('mouseleave', offHighlightHealthy)
 
-    var obesityBars = svg.selectAll('.opesity-bar').data(apc);
+    bars.exit().remove();
+
+    var obesityBars = svg.selectAll('.obesity-bar').data(apc, function(d) {
+      return d.generation;
+    });
 
     obesityBars.enter().append('rect');
 
@@ -98,14 +125,23 @@ function Cohort(config) {
       .attr('x', function(d) { return x(parseDate('' + (d.generation + d[obesityPercent]))); })
       .attr('y', function(d) { return y(d[obesityPercent]) + bandLength / 2 - barHeight /2 ; })
       .attr('width', function(d) {
-        return x(parseDate('' + (d.generation + d.expectancy))) - x(parseDate('' + (d.generation + d[obesityPercent])));
+        var w = x(parseDate('' + (d.generation + d.expectancy))) - x(parseDate('' + (d.generation + d[obesityPercent])));
+
+        var p = x(parseDate('' + (d.generation + d[obesityPercent])));
+        if (p > coverX) return 0;
+        else if (w + p > coverX) return coverX - p;
+        else return w;
       })
       .attr('height', barHeight)
       .attr('display', function(d) { if (!d[obesityPercent]) return 'none'; })
       .on('mouseenter', onHighlightObese)
       .on('mouseleave', offHighlightObese)
 
-    var birthpoints = svg.selectAll('.birthpoint').data(apc);
+    obesityBars.exit().remove();
+
+    var birthpoints = svg.selectAll('.birthpoint').data(apc, function(d) {
+      return d.generation;
+    });
 
     birthpoints.enter().append('circle');
     birthpoints
@@ -113,34 +149,31 @@ function Cohort(config) {
       .attr('cx', function(d) { return x(parseDate('' + d.generation)); })
       .attr('cy', function(d) { return y(d.name) + bandLength / 2; })
       .attr('r', 14)
-      .attr('display', function(d) { if (!d[obesityPercent]) return 'none'; })
+      .attr('display', function(d) {
+        if (!d[obesityPercent] || coverX < x(parseDate('' + d.generation))) return 'none';
+      })
       .style('fill', function(d, i) {
         return colorbrewer['Set1']['8'][i];
       })
       .on('mouseenter', onHighlightHealthy)
-      .on('mouseleave', offHighlightHealthy)
+      .on('mouseleave', offHighlightHealthy);
 
+    birthpoints.exit().remove();
 
-
-    var cover = svg.selectAll('.cover').data([0, 1]);
+    var cover = svg.selectAll('.cover').data([0]);
 
     cover.enter().append('rect')
-      .attr('class', function(d) { return d === 0 ? 'white-cover' : 'black-cover' })
-      .attr('x', function(d) { return d })
-      .attr('y', 0)
-      .attr('width', width)
-      .attr('height', height);
 
     cover
-      .transition()
-      .ease('linear')
-      .duration(10000)
-      .attr('width', 0)
-      .attr('x', width);
+      .attr('y', 0)
+      .attr('width', coverWidth)
+      .attr('height', height)
+      .attr('class', function(d) { return 'cover ' + (d === 0 ? 'white-cover' : 'black-cover'); })
+      .attr('x', function(d) { return d + coverX });
 
-    var legendG = svg.append('g')
-      .attr('class', 'legend-g')
-      .attr('transform', 'translate(0, -14)');
+    cover.exit().remove();
+
+    var legendG = svg.select('.legend-g');
 
     legendG.append('text')
       .attr('class', 'obese-label')
@@ -219,42 +252,46 @@ function Cohort(config) {
 
       })
 
-    var yearsToLive = svg.selectAll('.years-to-live').data(apc)
+    var yearsToLive = svg.selectAll('.years-to-live').data(apc, function(d) {
+      return d.generation;
+    });
 
-    yearsToLive.enter().append('g');
+    yearsToLive.enter().append('g')
+      .each(function(d, i) {
+        var g = d3.select(this);
 
-    yearsToLive.attr('transform', function(d, i) {
-      return 'translate(' + (width + 3*bandLength) + ', ' + y(i) + ')';
-    }).each(function(d, i) {
-      var g = d3.select(this);
+        g.append('rect')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('width', bandLength)
+          .attr('height', bandLength)
+          .attr('class', function(d) {
+            return 'outline-rect' + ' g' + d.generation + ' obese';
+          });
 
-      g.append('rect')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', bandLength)
-        .attr('height', bandLength)
-        .attr('class', function(d) {
-          return 'outline-rect' + ' g' + d.generation + ' obese';
-        });
+        g.append('text')
+          .attr('class', function(d) {
+            return 'text-obese' + ' g' + d.generation + ' healthy';
+          })
+          .text((d.expectancy - d[obesityPercent] || '?'))
+          .attr('text-anchor', 'middle')
+          .attr('y', bandLength / 2)
+          .attr('x', bandLength / 2)
+          .attr('dy', '.33em')
+          .style('fill', function() {
+            return colorbrewer['Set1']['8'][i];
+          });
+      });
 
-      g.append('text')
-        .attr('class', function(d) {
-          return 'text-obese' + ' g' + d.generation + ' healthy';
-        })
-        .text((d.expectancy - d[obesityPercent] || '?'))
-        .attr('text-anchor', 'middle')
-        .attr('y', bandLength / 2)
-        .attr('x', bandLength / 2)
-        .attr('dy', '.33em')
-        .style('fill', function() {
-          return colorbrewer['Set1']['8'][i];
-        });
-    })
+    yearsToLive
+      .attr('class', 'years-to-live')
+      .attr('transform', function(d, i) {
+        return 'translate(' + (width + 3*bandLength) + ', ' + y(i) + ')';
+      });
+    yearsToLive.exit().remove();
 
 
-    svg.append('g')
-        .attr('transform', 'translate(' + (width + 1.5*bandLength) + ', 0)')
-        .append('text')
+    svg.select('.years-healthy-label')
         .attr('y', -7)
         .attr('class', 'label')
         .attr('dy', '1.1em')
@@ -262,9 +299,7 @@ function Cohort(config) {
         .attr('transform', 'rotate(-45)')
         .text('Years lived before threshold');
 
-    svg.append('g')
-        .attr('transform', 'translate(' + (width + 3*bandLength) + ', 0)')
-        .append('text')
+    svg.select('.years-to-live-label')
         .attr('y', -7)
         .attr('class', 'label')
         .attr('dy', '1.1em')
@@ -273,41 +308,75 @@ function Cohort(config) {
         .text('Years to live after threshold');
 
 
-    var yearsHealthy = svg.selectAll('.years-healthy').data(apc)
+    var yearsHealthy = svg.selectAll('.years-healthy').data(apc, function(d) {
+      return d.generation
+    });
 
-    yearsHealthy.enter().append('g');
+    yearsHealthy.enter().append('g')
+      .each(function(d, i) {
+        var g = d3.select(this);
 
-    yearsHealthy.attr('transform', function(d, i) {
-      return 'translate(' + (width + 1.5*bandLength) + ', ' + y(i) + ')';
-    }).each(function(d, i) {
-      var g = d3.select(this);
+        g.append('rect')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('width', bandLength)
+          .attr('height', bandLength)
+          .attr('class', function(d) {
+            return 'outline-rect' + ' g' + d.generation + ' healthy';
+          });
 
-      g.append('rect')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', bandLength)
-        .attr('height', bandLength)
-        .attr('class', function(d) {
-          return 'outline-rect' + ' g' + d.generation + ' healthy';
-        });
+        g.append('text')
+          .text((d[obesityPercent] || '?'))
+          .attr('class', function(d) {
+            return 'text-healthy' + ' g' + d.generation + ' healthy';
+          })
+          .attr('text-anchor', 'middle')
+          .attr('y', bandLength / 2)
+          .attr('x', bandLength / 2)
+          .attr('dy', '.33em')
+          .style('fill', function() {
+            return colorbrewer['Set1']['8'][i];
+          });
+      });
 
-      g.append('text')
-        .text((d[obesityPercent] || '?'))
-        .attr('class', function(d) {
-          return 'text-healthy' + ' g' + d.generation + ' healthy';
-        })
-        .attr('text-anchor', 'middle')
-        .attr('y', bandLength / 2)
-        .attr('x', bandLength / 2)
-        .attr('dy', '.33em')
-        .style('fill', function() {
-          return colorbrewer['Set1']['8'][i];
-        });
+    yearsHealthy
+      .attr('class', 'years-healthy')
+      .attr('transform', function(d, i) {
+        return 'translate(' + (width + 1.5*bandLength) + ', ' + y(i) + ')';
+      });
+    yearsHealthy.exit().remove();
+
+
+
+
+  }
+
+  my.runCover = function() {
+
+    var duration = 2000000;
+    var start = Date.now();
+    var previousTime = Date.now();
+    var totalTime = 0;
+
+    d3.timer(function() {
+      var delta = Date.now() - previousTime;
+      totalTime += delta;
+
+      var fraction = delta / duration;
+
+      if (totalTime >= duration) {
+        coverX = width;
+        coverWidth = 0;
+        my();
+        return true;
+      } else {
+        coverX += fraction * width;
+        my();
+        return false;
+      }
+      previousTime = Date.now();
+
     })
-
-
-
-
   }
 
   function onHighlightHealthy(d) {
@@ -332,9 +401,5 @@ function Cohort(config) {
 
   }
   return my;
-
-
-
-
 
 }
