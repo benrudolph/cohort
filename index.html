@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 300;
+  color: white;
+  background-color: #222;
+}
+.axis text {
+  font: 10px sans-serif;
+  font-weight: 100;
+  fill: whitesmoke;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: whitesmoke;
+  shape-rendering: crispEdges;
+}
+
+#content {
+  width: 800px;
+  margin: 0px auto;
+}
+
+#cohort-bar {
+  text-align: center;
+}
+
+.obesity-bar {
+  fill: white;
+}
+
+.bar, .obesity-bar {
+  stroke: #222;
+  stroke-width: 2px;
+}
+
+.title {
+  text-align: center;
+  font-size: 3em;
+  font-weight: 100;
+  margin: 40px 0;
+}
+
+.title .highlight {
+  color: #e74c3c;
+}
+
+.hide {
+  display: none;
+}
+
+.obese-text {
+  fill: white;
+}
+
+.obese-text, .healthy-text {
+  font-size: 11px;
+  font-weight: 100;
+}
+
+.black-cover {
+  fill: #222;
+}
+.white-cover {
+  fill:white;
+}
+
+</style>
+<body>
+
+  <div id="content">
+    <div class="title">Crossing the <span class="highlight">15%</span> obesity threshold</div>
+    <div id="cohort-bar"></div>
+  </div>
+  <script src="d3.v3.min.js"></script>
+  <script src="apc_percents.js"></script>
+  <script src="colorbrewer.js"></script>
+  <script src="cohort.js"></script>
+  <script>
+    var cohort = Cohort({
+      width: 600,
+      height: 350,
+      selection: d3.select('#cohort-bar'),
+      margin: {
+        top: 50,
+        left: 100,
+        bottom: 0,
+        right: 30
+      }
+    })
+    cohort();
+  </script>
+</body>
