@@ -1,5 +1,9 @@
 function Cohort(config) {
 
+  apc.sort(function(a, b) {
+    return a.generation - b.generation;
+  })
+
   var margin = config.margin;
 
   var width = config.width - config.margin.left - config.margin.right;
@@ -56,7 +60,12 @@ function Cohort(config) {
 
   svg.append("g")
     .attr("class", "y axis")
-    .call(yAxis);
+    .call(yAxis)
+    .append('text')
+      .text('Born in the...')
+      .attr('transform', 'rotate(-90) translate(' + (-height / 2) +', -40 )')
+      .attr('text-anchor', 'middle');
+
 
   function my() {
 
@@ -69,6 +78,7 @@ function Cohort(config) {
       })
       .attr('x', function(d) { return x(parseDate('' + d.generation)); })
       .attr('y', function(d) { return y(d.name) + bandLength / 2 - barHeight /2 ; })
+      .attr('display', function(d) { if (!d[obesityPercent]) return 'none'; })
       .attr('width', function(d) {
         return x(parseDate('' + (d.generation + d.expectancy))) - x(parseDate('' + d.generation));
       })
@@ -76,10 +86,10 @@ function Cohort(config) {
       .style('fill', function(d, i) {
         return colorbrewer['Set1']['8'][i];
       })
+      .on('mouseenter', onHighlightHealthy)
+      .on('mouseleave', offHighlightHealthy)
 
-    var obesityBars = svg.selectAll('.opesity-bar').data(apc.filter(function(d) {
-      return d[obesityPercent];
-    }));
+    var obesityBars = svg.selectAll('.opesity-bar').data(apc);
 
     obesityBars.enter().append('rect');
 
@@ -90,19 +100,25 @@ function Cohort(config) {
       .attr('width', function(d) {
         return x(parseDate('' + (d.generation + d.expectancy))) - x(parseDate('' + (d.generation + d[obesityPercent])));
       })
-      .attr('height', barHeight);
+      .attr('height', barHeight)
+      .attr('display', function(d) { if (!d[obesityPercent]) return 'none'; })
+      .on('mouseenter', onHighlightObese)
+      .on('mouseleave', offHighlightObese)
 
     var birthpoints = svg.selectAll('.birthpoint').data(apc);
 
     birthpoints.enter().append('circle');
     birthpoints
-      .attr('class', '.birthpoint.hide')
+      .attr('class', 'birthpoint')
       .attr('cx', function(d) { return x(parseDate('' + d.generation)); })
       .attr('cy', function(d) { return y(d.name) + bandLength / 2; })
       .attr('r', 14)
+      .attr('display', function(d) { if (!d[obesityPercent]) return 'none'; })
       .style('fill', function(d, i) {
         return colorbrewer['Set1']['8'][i];
-      });
+      })
+      .on('mouseenter', onHighlightHealthy)
+      .on('mouseleave', offHighlightHealthy)
 
 
 
@@ -127,20 +143,20 @@ function Cohort(config) {
       .attr('transform', 'translate(0, -14)');
 
     legendG.append('text')
-      .attr('class', 'obese-text')
+      .attr('class', 'obese-label')
       .attr('x', x(parseDate('' + (apc[0].generation + apc[0][obesityPercent]))) + 2)
       .attr('dy', '-1.4em')
       .attr('text-anchor', 'start')
-      .text(obesityPercent + '% of population is obese');
+      .text('Over ' + obesityPercent + '% of population is obese');
 
     legendG.append('text')
-      .attr('class', 'healthy-text')
+      .attr('class', 'healthy-label')
       .attr('x', x(parseDate('' + (apc[0].generation + apc[0][obesityPercent]))) + 2)
       .attr('dy', '-1.4em')
       .attr('dx', '-.6em')
       .attr('text-anchor', 'end')
       .style('fill', colorbrewer['Set1']['8'][0])
-      .text((100 - obesityPercent) + '% of population is healthy');
+      .text('Less than ' + (obesityPercent) + '% of population is obese');
 
     var legendLines = legendG.selectAll('.legend-lines').data([
         {
@@ -203,10 +219,118 @@ function Cohort(config) {
 
       })
 
+    var yearsToLive = svg.selectAll('.years-to-live').data(apc)
+
+    yearsToLive.enter().append('g');
+
+    yearsToLive.attr('transform', function(d, i) {
+      return 'translate(' + (width + 3*bandLength) + ', ' + y(i) + ')';
+    }).each(function(d, i) {
+      var g = d3.select(this);
+
+      g.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', bandLength)
+        .attr('height', bandLength)
+        .attr('class', function(d) {
+          return 'outline-rect' + ' g' + d.generation + ' obese';
+        });
+
+      g.append('text')
+        .attr('class', function(d) {
+          return 'text-obese' + ' g' + d.generation + ' healthy';
+        })
+        .text((d.expectancy - d[obesityPercent] || '?'))
+        .attr('text-anchor', 'middle')
+        .attr('y', bandLength / 2)
+        .attr('x', bandLength / 2)
+        .attr('dy', '.33em')
+        .style('fill', function() {
+          return colorbrewer['Set1']['8'][i];
+        });
+    })
+
+
+    svg.append('g')
+        .attr('transform', 'translate(' + (width + 1.5*bandLength) + ', 0)')
+        .append('text')
+        .attr('y', -7)
+        .attr('class', 'label')
+        .attr('dy', '1.1em')
+        .attr('dx', '1.5em')
+        .attr('transform', 'rotate(-45)')
+        .text('Years lived before threshold');
+
+    svg.append('g')
+        .attr('transform', 'translate(' + (width + 3*bandLength) + ', 0)')
+        .append('text')
+        .attr('y', -7)
+        .attr('class', 'label')
+        .attr('dy', '1.1em')
+        .attr('dx', '1.5em')
+        .attr('transform', 'rotate(-45)')
+        .text('Years to live after threshold');
+
+
+    var yearsHealthy = svg.selectAll('.years-healthy').data(apc)
+
+    yearsHealthy.enter().append('g');
+
+    yearsHealthy.attr('transform', function(d, i) {
+      return 'translate(' + (width + 1.5*bandLength) + ', ' + y(i) + ')';
+    }).each(function(d, i) {
+      var g = d3.select(this);
+
+      g.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', bandLength)
+        .attr('height', bandLength)
+        .attr('class', function(d) {
+          return 'outline-rect' + ' g' + d.generation + ' healthy';
+        });
+
+      g.append('text')
+        .text((d[obesityPercent] || '?'))
+        .attr('class', function(d) {
+          return 'text-healthy' + ' g' + d.generation + ' healthy';
+        })
+        .attr('text-anchor', 'middle')
+        .attr('y', bandLength / 2)
+        .attr('x', bandLength / 2)
+        .attr('dy', '.33em')
+        .style('fill', function() {
+          return colorbrewer['Set1']['8'][i];
+        });
+    })
+
+
 
 
   }
 
+  function onHighlightHealthy(d) {
+    d3.select('rect.g' + d.generation + '.healthy').classed('highlight', true);
+    d3.select('.text-healthy.g' + d.generation).classed('highlight', true);
+  }
+
+  function offHighlightHealthy(d) {
+    d3.select('rect.g' + d.generation + '.healthy').classed('highlight', false);
+    d3.select('.text-healthy.g' + d.generation).classed('highlight', false);
+
+  }
+
+  function onHighlightObese(d) {
+    d3.select('rect.g' + d.generation + '.obese').classed('highlight', true);
+    d3.select('.text-obese.g' + d.generation).classed('highlight', true);
+  }
+
+  function offHighlightObese(d) {
+    d3.select('rect.g' + d.generation + '.obese').classed('highlight', false);
+    d3.select('.text-obese.g' + d.generation).classed('highlight', false);
+
+  }
   return my;
 
 

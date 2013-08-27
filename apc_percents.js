@@ -2,7 +2,7 @@
 
 var apc = [
   {
-    name: 'Born in the 20\'s',
+    name: '20\'s',
     generation: 1926,
     15: 40,
     20: 48,
@@ -12,7 +12,7 @@ var apc = [
     expectancy: 59
   },
   {
-    name: 'Born in the 30\'s',
+    name: '30\'s',
     generation: 1936,
     10: 27,
     15: 35,
@@ -24,7 +24,7 @@ var apc = [
     expectancy: 62
   },
   {
-    name: 'Born in the 40\'s',
+    name: '40\'s',
     generation: 1946,
     10: 26,
     15: 30,
@@ -35,7 +35,7 @@ var apc = [
     expectancy: 66
   },
   {
-    name: 'Born in the 50\'s',
+    name: '50\'s',
     generation: 1956,
     10: 21,
     15: 27,
@@ -46,7 +46,7 @@ var apc = [
     expectancy: 68
   },
   {
-    name: 'Born in the 60\'s',
+    name: '60\'s',
     generation: 1966,
     10: 15,
     15: 18,
@@ -56,7 +56,7 @@ var apc = [
     expectancy: 68
   },
   {
-    name: 'Born in the 70\'s',
+    name: '70\'s',
     generation: 1976,
     10: 5,
     15: 14,
@@ -64,14 +64,14 @@ var apc = [
     expectancy: 71
   },
   {
-    name: 'Born in the 80\'s',
+    name: '80\'s',
     generation: 1986,
     10: 4,
     15: 8,
     expectancy: 72
   },
   {
-    name: 'Born in the 90\'s',
+    name: '90\'s',
     generation: 1996,
     10: 6,
     expectancy: 74

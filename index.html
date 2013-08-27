@@ -8,10 +8,26 @@ body {
   color: white;
   background-color: #222;
 }
+
+text {
+  fill: white;
+}
+
+.label {
+  font-weight: 100;
+  font-size: 13px;
+}
+
 .axis text {
   font: 10px sans-serif;
   font-weight: 100;
   fill: whitesmoke;
+}
+
+.outline-rect {
+  stroke: white;
+  stroke-width: 1px;
+  fill: none;
 }
 
 .axis path,
@@ -37,6 +53,11 @@ body {
 .bar, .obesity-bar {
   stroke: #222;
   stroke-width: 2px;
+  cursor: pointer;
+}
+
+.birthpoint {
+  cursor: pointer;
 }
 
 .title {
@@ -50,15 +71,20 @@ body {
   color: #e74c3c;
 }
 
+.text-healthy.highlight, .text-obese.highlight {
+  fill: black !important;
+  font-weight: bold;
+}
+
 .hide {
   display: none;
 }
 
-.obese-text {
+.obese-label {
   fill: white;
 }
 
-.obese-text, .healthy-text {
+.obese-label, .healthy-label {
   font-size: 11px;
   font-weight: 100;
 }
@@ -68,6 +94,10 @@ body {
 }
 .white-cover {
   fill:white;
+}
+
+rect.highlight {
+  fill: white;
 }
 
 </style>
@@ -83,14 +113,14 @@ body {
   <script src="cohort.js"></script>
   <script>
     var cohort = Cohort({
-      width: 600,
-      height: 350,
+      width: 830,
+      height: 430,
       selection: d3.select('#cohort-bar'),
       margin: {
-        top: 50,
+        top: 130,
         left: 100,
         bottom: 0,
-        right: 30
+        right: 235
       }
     })
     cohort();
